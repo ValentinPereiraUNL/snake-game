@@ -30,10 +30,10 @@ class Boton:
 
 #Serpiente
 class Snake:
-    def __init__(self):
-        self.snake_head = [100, 50]
-        self.snake_pos = [[100,50]]
-        self.snake_dir = [10, 0]
+    def __init__(self,pos, dir):
+        self.snake_head = pos
+        self.snake_pos = [pos]
+        self.snake_dir = dir
 
     def set_head(self,head):
         self.snake_head = head
@@ -63,11 +63,13 @@ class App:
     def __init__(self):
         self._running = True
         self._display_surf = None
-        self.size = self.weight, self.height = 640, 400
+        self.size = self.weight, self.height = 1280, 1024
         pygame.display.set_caption("La serpiente loca")
         
-        self.snake = Snake()
-        self.comida = Comida()        
+        self.snake = Snake([400,200],[-10,0])
+        self.snake2 = Snake([100,50],[10,0]) 
+        self.comida = Comida()
+        self.comida2 = Comida()        
          
         self.estado = "menu"
 
@@ -79,16 +81,23 @@ class App:
 
         #Botones
         self.button_start = Boton(220, 150, 200, 50, "JUGAR", (0, 128, 0), (0, 180, 0), self.start_game)
-        self.button_exit = Boton(220, 230, 200, 50, "SALIR", (200, 0, 0), (255, 0, 0), self.on_cleanup)
+        self.button_exit = Boton(220, 260, 200, 50, "SALIR", (200, 0, 0), (255, 0, 0), self.on_cleanup)
+        self.button_versus = Boton(220,205,200,50, "VERSUS",(200,200,0),(255,255,0),self.start_versus)
 
     def start_game(self):
         self.estado = "clasico"
+    
+    def start_versus(self):
+        self.estado = "versus"
 
+    def start_challenge(self):
+        self.estado = "challenge"
     def on_event(self, event): #Ejecucion de cada evento
         if event.type == pygame.QUIT:
             self._running = False
         if self.estado == "menu":
             self.button_start.check_click(event)
+            self.button_versus.check_click(event)
             self.button_exit.check_click(event)
         elif self.estado == "clasico":
         #Manejo del teclado
@@ -103,46 +112,114 @@ class App:
                     self.snake.snake_dir = [10,0]
                 elif event.key == K_ESCAPE:
                     self.estado = "menu"
-
+        elif self.estado == "versus":
+        #Manejo del teclado
+            if event.type == KEYDOWN:
+                if event.key == K_UP and self.snake.snake_dir != [0,10]:
+                    self.snake.snake_dir = [0,-10]
+                elif event.key == K_DOWN and self.snake.snake_dir != [0,-10]:
+                    self.snake.snake_dir = [0,10]
+                elif event.key == K_LEFT and self.snake.snake_dir != [10,0]:
+                    self.snake.snake_dir = [-10,0]
+                elif event.key == K_RIGHT and self.snake.snake_dir != [-10,0]:
+                    self.snake.snake_dir = [10,0]
+                elif event.key == K_w and self.snake2.snake_dir != [0,10]:
+                    self.snake2.snake_dir = [0,-10]
+                elif event.key == K_s and self.snake2.snake_dir != [0,-10]:
+                    self.snake2.snake_dir = [0,10]
+                elif event.key == K_a and self.snake2.snake_dir != [10,0]:
+                    self.snake2.snake_dir = [-10,0]
+                elif event.key == K_d and self.snake2.snake_dir != [-10,0]:
+                    self.snake2.snake_dir = [10,0]
+                elif event.key == K_ESCAPE:
+                    self.estado = "menu"
     def on_loop(self):
         """Lógica del juego: mueve la serpiente y detecta colisiones."""
         if self.estado == "clasico":
+            #Movimiento
             self.snake.move()
-        if self.snake.snake_head[0]==0 or self.snake.snake_head[1]==0 or self.snake.snake_head[0]==630 or self.snake.snake_head[1]==390:
-            self.on_cleanup()
-        for segmento in self.snake.snake_pos[1::]:
-            if segmento == self.snake.snake_head:
-               self.on_cleanup()
-        # Verifica si la serpiente come la comida
-        if self.snake.snake_head == self.comida.pos:
-            self.snake.crecer()
-            self.comida.new_pos()  # Genera nueva comida
+            #Chocarse contra pared
+            if self.snake.snake_head[0]==0 or self.snake.snake_head[1]==0 or self.snake.snake_head[0]==self.weight-10 or self.snake.snake_head[1]==self.height-10:
+                self.on_cleanup()
+            #Chocarse a si mismo
+            for segmento in self.snake.snake_pos[1::]:
+                if segmento == self.snake.snake_head:
+                    self.on_cleanup()
+            # Verifica si la serpiente come la comida
+            if self.snake.snake_head == self.comida.pos:
+                self.snake.crecer()
+                self.comida.new_pos()  # Genera nueva comida
+        if self.estado == "versus":
+            #Movimiento
+            self.snake.move()
+            self.snake2.move()
+            #Chocarse contra pared
+            if self.snake.snake_head[0]==0 or self.snake.snake_head[1]==0 or self.snake.snake_head[0]==630 or self.snake.snake_head[1]==390:
+                self.on_cleanup()
+            if self.snake2.snake_head[0]==0 or self.snake2.snake_head[1]==0 or self.snake2.snake_head[0]==630 or self.snake2.snake_head[1]==390:
+                self.on_cleanup()
+            #Chocarse a si mismo
+            for segmento in self.snake.snake_pos[1::]:
+                if segmento == self.snake.snake_head:
+                    self.on_cleanup()
+                if segmento == self.snake2.snake_head:
+                    self.on_cleanup()
+            for segmento2 in self.snake2.snake_pos[1::]:
+                if segmento2 == self.snake2.snake_head:
+                    self.on_cleanup()
+                if segmento2 == self.snake.snake_head:
+                    self.on_cleanup()
+            # Verifica si la serpiente come la comida
+            if self.snake.snake_head == self.comida.pos:
+                self.snake.crecer()
+                self.comida.new_pos()  # Genera nueva comida
+            if self.snake2.snake_head == self.comida2.pos:
+                self.snake2.crecer()
+                self.comida2.new_pos()  # Genera nueva comida
 
 
     def on_render(self): #Dibuja lo que se encuentra en la pantalla
         self._display_surf.fill((65,125,125))
+         #bordes
+        pygame.draw.rect(self._display_surf,(1,1,1),(0,0,10,self.height))
+        pygame.draw.rect(self._display_surf,(1,1,1),(0,self.height-10,self.weight,10))
+        pygame.draw.rect(self._display_surf,(1,1,1),(self.weight-10,0,10,self.height))
+        pygame.draw.rect(self._display_surf,(1,1,1),(0,0,self.weight,10))
         if self.estado == "menu":
             pygame.draw.rect(self._display_surf,(0,0,0),(220,60,210,50))
             titulo = self.font.render("La serpiente loca", True, (255, 255, 255))
             
             self._display_surf.blit(titulo,(self.weight//2 - 100, 80))
             self.button_start.draw(self._display_surf,self.font)
+            self.button_versus.draw(self._display_surf,self.font)
             self.button_exit.draw(self._display_surf,self.font)
             
         elif self.estado == "clasico":
             #comida
             pygame.draw.circle(self._display_surf,(255,0,0),self.comida.pos,5)
-            #bordes
-            pygame.draw.rect(self._display_surf,(1,1,1),(0,0,10,400))
-            pygame.draw.rect(self._display_surf,(1,1,1),(0,390,640,10))
-            pygame.draw.rect(self._display_surf,(1,1,1),(630,0,10,400))
-            pygame.draw.rect(self._display_surf,(1,1,1),(0,0,640,10))
             #cabeza
             pygame.draw.rect(self._display_surf,(0,100,0),(self.snake.snake_head[0],self.snake.snake_head[1],10,10))
             #cuerpo
             for segment in self.snake.snake_pos:
                 pygame.draw.rect(self._display_surf, (0, 100, 0), (segment[0], segment[1], 10, 10))
 
+        elif self.estado == "versus":
+            #comida
+            pygame.draw.circle(self._display_surf,(0,255,0),self.comida.pos,5)
+            pygame.draw.circle(self._display_surf,(0,0,255),self.comida2.pos,5)
+            #bordes
+            pygame.draw.rect(self._display_surf,(1,1,1),(0,0,10,400))
+            pygame.draw.rect(self._display_surf,(1,1,1),(0,390,640,10))
+            pygame.draw.rect(self._display_surf,(1,1,1),(630,0,10,400))
+            pygame.draw.rect(self._display_surf,(1,1,1),(0,0,640,10))
+            #cabezaS
+            pygame.draw.rect(self._display_surf,(0,100,0),(self.snake.snake_head[0],self.snake.snake_head[1],10,10))
+            pygame.draw.rect(self._display_surf,(0,0,100),(self.snake2.snake_head[0],self.snake2.snake_head[1],10,10))
+            #cuerpoS
+            for segment in self.snake.snake_pos:
+                pygame.draw.rect(self._display_surf, (0, 100, 0), (segment[0], segment[1], 10, 10))
+            for segment2 in self.snake2.snake_pos:
+                pygame.draw.rect(self._display_surf, (0, 0, 100), (segment2[0], segment2[1], 10, 10))
         pygame.display.flip() 
 
     def on_cleanup(self): #Lo que sucede al limpiar la pantalla 
@@ -157,7 +234,7 @@ class App:
                 self.on_event(event)
             self.on_loop()
             self.on_render()
-            clock.tick(20)
+            clock.tick(10)
 
         self.on_cleanup()
 
